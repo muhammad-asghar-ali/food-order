@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { VendorLoginInput } from "../dtos";
 import { Vendor } from "../models";
-import { ValidatePassword } from "../utility";
+import { GenerateSignature, ValidatePassword } from "../utility";
 import { FindVendor } from "./admin.controller";
 
 export const vendorLogin = async (
@@ -37,14 +37,33 @@ export const vendorLogin = async (
       .json({ success: false, message: "invaild credentails" });
   }
 
-  res.status(200).json({ success: true, data: alreadyExist });
+  // generate signature
+  const signature = GenerateSignature({
+    _id: alreadyExist._id,
+    name: alreadyExist.name,
+    email: alreadyExist.email,
+    foodType: alreadyExist.foodType,
+  });
+
+  res.status(200).json({ success: true, token: signature });
 };
 
 export const getVendorProfile = async (
   req: Request,
   res: Response,
   next: NextFunction
-) => {};
+) => {
+  const user = req.user;
+
+  if (!user) {
+    return res
+      .status(400)
+      .json({ success: false, message: "vendor Information Not Found" });
+  }
+
+  const existingVendor = await FindVendor(user._id);
+  res.status(200).json({ success: true, data: existingVendor });
+};
 
 export const updateVendorProfile = async (
   req: Request,
