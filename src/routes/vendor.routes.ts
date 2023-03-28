@@ -5,7 +5,9 @@ import { Authenticate } from "../middlewares"
 const router = express.Router()
 
 router.post('/login', vendorLogin)
-router.get('/profile', Authenticate, getVendorProfile)
+
+router.use(Authenticate)
+router.get('/profile', getVendorProfile)
 router.patch('/profile', updateVendorProfile)
 router.patch('/service', updateVendorService)
 
