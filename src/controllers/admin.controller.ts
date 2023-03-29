@@ -60,7 +60,6 @@ export const createVendor = async (
       rating: 0,
       serviceAvailabilty: false,
       coverImage: [],
-      food: []
     });
 
     // send a response in json format
@@ -71,6 +70,52 @@ export const createVendor = async (
       message: error.message ? error.message : "Internal server error",
     });
   }
+  const {
+    name,
+    ownerName,
+    foodType,
+    address,
+    pincode,
+    password,
+    phone,
+    email,
+  } = <CreateVendorInput>req.body;
+
+    // check already exist vendor
+    const alreadyExist = await FindVendor("", email);
+
+    // if it exist thro the response
+    if (alreadyExist) {
+      return res
+        .status(409)
+        .json({ success: false, message: "vendor already exist" });
+    }
+
+    // generate salt
+    const salt = await GenerateSalt();
+
+    // encrypt the password
+    const hashPassword = await GeneratePassword(password, salt);
+
+    // create new vendor
+    const vendor = await Vendor.create({
+      name,
+      ownerName,
+      foodType,
+      address,
+      pincode,
+      password: hashPassword,
+      phone,
+      email,
+      salt: salt,
+      rating: 0,
+      serviceAvailabilty: false,
+      coverImage: [],
+      food: []
+    });
+
+  // send a response in json format
+  res.status(201).json({ success: true, data: vendor });
 };
 
 export const getVendors = async (
@@ -97,6 +142,18 @@ export const getVendors = async (
       message: error.message ? error.message : "Internal server error",
     });
   }
+  // find all vendors
+  const vendors = await Vendor.find({}).lean();
+
+    // if no vendor exists
+    if (!vendors.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "no vendor exist" });
+    }
+
+  // send a response in json format
+  res.status(200).json({ success: true, data: vendors });
 };
 
 export const getVendorById = async (
@@ -104,8 +161,7 @@ export const getVendorById = async (
   res: Response,
   next: NextFunction
 ) => {
-  try {
-    const { id } = req.params;
+  const { id } = req.params;
 
     if (!id) {
       return res
@@ -115,17 +171,11 @@ export const getVendorById = async (
 
     const vendor = await FindVendor(id);
 
-    if (!vendor) {
-      return res
-        .status(400)
-        .json({ success: false, message: "no vendor found" });
-    }
-    // send a response in json format
-    res.status(200).json({ success: true, data: vendor });
-  } catch (error) {
-    res.status(500).json({
-      sucess: false,
-      message: error.message ? error.message : "Internal server error",
-    });
+  if (!vendor) {
+    return res
+      .status(400)
+      .json({ success: false, message: "no vendor found" });
   }
+  // send a response in json format
+  res.status(200).json({ success: true, data: vendor });
 };
