@@ -1,19 +1,43 @@
-import express, {Request, Response, NextFunction} from "express"
-import { getVendorProfile, updateVendorProfile, updateVendorService, vendorLogin } from "../controllers"
-import { Authenticate } from "../middlewares"
+import express, { Request, Response, NextFunction } from "express";
+import path from "path";
+import {
+  addFood,
+  getFoods,
+  getVendorProfile,
+  updateVendorCoverImage,
+  updateVendorProfile,
+  updateVendorService,
+  vendorLogin,
+} from "../controllers";
+import { Authenticate } from "../middlewares";
+import multer from "multer";
 
-const router = express.Router()
+const router = express.Router();
 
-router.post('/login', vendorLogin)
+const imageStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, path.join(__dirname, "../images/"));
+  },
+  filename: function (req, file, cb) {
+    cb(null, new Date().toISOString().replace(/:/g, "-") + file.originalname);
+  },
+});
 
-router.use(Authenticate)
-router.get('/profile', getVendorProfile)
-router.patch('/profile', updateVendorProfile)
-router.patch('/service', updateVendorService)
+const images = multer({ storage: imageStorage }).array("images", 10);
 
+router.post("/login", vendorLogin);
+
+router.use(Authenticate);
+router.get("/profile", getVendorProfile);
+router.patch("/profile", updateVendorProfile);
+router.patch("/coverimage", images, updateVendorCoverImage);
+router.patch("/service", updateVendorService);
+
+router.post("/food", images, addFood);
+router.get("/foods", getFoods);
 
 router.get("/", (req: Request, res: Response, next: NextFunction) => {
-    res.json({message: "hello from vendor"})
-})
+  res.json({ message: "hello from vendor" });
+});
 
-export {router as VendorRoutes}
+export { router as VendorRoutes };

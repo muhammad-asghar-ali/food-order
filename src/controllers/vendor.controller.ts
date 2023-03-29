@@ -97,7 +97,7 @@ export const updateVendorProfile = async (
 
     const existingVendor = await FindVendor(user._id);
 
-    if (existingVendor !== null) {
+    if (existingVendor) {
       existingVendor.name = name || existingVendor.name;
       existingVendor.address = address || existingVendor.address;
       existingVendor.phone = phone || existingVendor.phone;
@@ -117,6 +117,39 @@ export const updateVendorProfile = async (
   }
 };
 
+export const updateVendorCoverImage = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const user = req.user;
+
+  if (!user) {
+    return res.status(400).json({
+      sucess: false,
+      message: "Unable to update cover image",
+    });
+  }
+  const vendor = await FindVendor(user._id);
+
+  if (!vendor) {
+    return res.status(400).json({
+      sucess: false,
+      message: "Unable to update cover image",
+    });
+  }
+
+  const files = req.files as [Express.Multer.File];
+
+  const images = files.map((file: Express.Multer.File) => file.filename);
+
+  vendor.coverImages.push(...images);
+
+  const saveResult = await vendor.save();
+
+  return res.json(saveResult);
+};
+
 export const updateVendorService = async (
   req: Request,
   res: Response,
@@ -134,7 +167,7 @@ export const updateVendorService = async (
 
     const existingVendor = await FindVendor(user._id);
 
-    if (existingVendor !== null) {
+    if (existingVendor) {
       existingVendor.serviceAvailabilty = !existingVendor.serviceAvailabilty;
 
       const saveResult = await existingVendor.save();
@@ -152,7 +185,7 @@ export const updateVendorService = async (
   }
 };
 
-export const AddFood = async (
+export const addFood = async (
   req: Request,
   res: Response,
   next: NextFunction
@@ -166,13 +199,16 @@ export const AddFood = async (
     if (!user) {
       return res.status(400).json({
         sucess: false,
-        message: "Unable to Update vendor profile",
+        message: "Unable to create food",
       });
     }
 
     const vendor = await FindVendor(user._id);
 
-    if (vendor !== null) {
+    if (vendor) {
+      const files = req.files as [Express.Multer.File];
+
+      const images = files.map((file: Express.Multer.File) => file.filename);
       const food = await Food.create({
         vendorId: vendor._id,
         name: name,
@@ -182,18 +218,51 @@ export const AddFood = async (
         rating: 0,
         readyTime: readyTime,
         foodType: foodType,
-        images: ["image.jpg"],
+        images: images,
       });
 
       vendor.foods.push(food);
       const result = await vendor.save();
-      return res.json(result);
+      return res.status(200).json({ sucess: true, data: result });
     } else {
       return res.status(404).json({
         sucess: false,
         message: "vendor not found",
       });
     }
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const getFoods = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to get foods",
+      });
+    }
+
+    const foods = await Food.find({ vendorId: user._id }).lean();
+
+    if (!foods.length) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to get foods",
+      });
+    }
+
+    res.status(200).json({ sucess: true, data: foods });
   } catch (error) {
     res.status(500).json({
       sucess: false,
