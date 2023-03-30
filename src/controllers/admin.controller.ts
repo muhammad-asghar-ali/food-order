@@ -142,18 +142,6 @@ export const getVendors = async (
       message: error.message ? error.message : "Internal server error",
     });
   }
-  // find all vendors
-  const vendors = await Vendor.find({}).lean();
-
-    // if no vendor exists
-    if (!vendors.length) {
-      return res
-        .status(404)
-        .json({ success: false, message: "no vendor exist" });
-    }
-
-  // send a response in json format
-  res.status(200).json({ success: true, data: vendors });
 };
 
 export const getVendorById = async (
@@ -161,7 +149,8 @@ export const getVendorById = async (
   res: Response,
   next: NextFunction
 ) => {
-  const { id } = req.params;
+  try {
+    const { id } = req.params;
 
     if (!id) {
       return res
@@ -178,4 +167,10 @@ export const getVendorById = async (
   }
   // send a response in json format
   res.status(200).json({ success: true, data: vendor });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
 };
