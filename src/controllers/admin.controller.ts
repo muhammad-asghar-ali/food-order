@@ -70,52 +70,6 @@ export const createVendor = async (
       message: error.message ? error.message : "Internal server error",
     });
   }
-  const {
-    name,
-    ownerName,
-    foodType,
-    address,
-    pincode,
-    password,
-    phone,
-    email,
-  } = <CreateVendorInput>req.body;
-
-    // check already exist vendor
-    const alreadyExist = await FindVendor("", email);
-
-    // if it exist thro the response
-    if (alreadyExist) {
-      return res
-        .status(409)
-        .json({ success: false, message: "vendor already exist" });
-    }
-
-    // generate salt
-    const salt = await GenerateSalt();
-
-    // encrypt the password
-    const hashPassword = await GeneratePassword(password, salt);
-
-    // create new vendor
-    const vendor = await Vendor.create({
-      name,
-      ownerName,
-      foodType,
-      address,
-      pincode,
-      password: hashPassword,
-      phone,
-      email,
-      salt: salt,
-      rating: 0,
-      serviceAvailabilty: false,
-      coverImage: [],
-      food: []
-    });
-
-  // send a response in json format
-  res.status(201).json({ success: true, data: vendor });
 };
 
 export const getVendors = async (

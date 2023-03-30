@@ -2,6 +2,9 @@ import express from 'express';
 import App from './services/express';
 import dbConnection from './services/Database';
 import { PORT } from './config';
+import dotenv from 'dotenv';
+
+dotenv.config()
 
 const StartServer = async () => {
 
