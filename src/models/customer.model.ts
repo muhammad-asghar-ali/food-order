@@ -12,7 +12,7 @@ interface CustomerDoc extends Document {
   otp: number;
   otp_expiry: Date;
   lat: number;
-  leg: number;
+  lng: number;
 }
 
 const CustomerSchema = new Schema(
@@ -28,7 +28,7 @@ const CustomerSchema = new Schema(
     otp: { type: Number, required: true },
     otp_expiry: { type: Date , required: true },
     lat: { type: Number }, 
-    leg: { type: Number },
+    lng: { type: Number },
   },
   {
     // set the json response here

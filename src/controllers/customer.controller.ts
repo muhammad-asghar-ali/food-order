@@ -1,8 +1,17 @@
 import { NextFunction, Request, Response } from "express";
 import { plainToClass } from "class-transformer";
-import { CreateCustomerInput } from "../dtos/customer.dto";
+import {
+  CreateCustomerInput,
+  EditCustomerProfileInput,
+  UserLoginInput,
+} from "../dtos/customer.dto";
 import { validate } from "class-validator";
-import { GeneratePassword, GenerateSalt, GenerateSignature } from "../utility";
+import {
+  GeneratePassword,
+  GenerateSalt,
+  GenerateSignature,
+  ValidatePassword,
+} from "../utility";
 import { Customer } from "../models";
 import { GenerateOtp, onRequestOTP } from "../utility/notifications";
 
@@ -69,13 +78,12 @@ export const customerSignup = async (
       email: result.email,
       verified: result.verified,
     });
+
     // Send the result
-    return res
-      .status(201)
-      .json({
-        token: signature,
-        data: { verified: result.verified, email: result.email },
-      });
+    return res.status(201).json({
+      token: signature,
+      data: { verified: result.verified, email: result.email },
+    });
   } catch (error) {
     res.status(500).json({
       sucess: false,
@@ -90,6 +98,47 @@ export const customerLogin = async (
   next: NextFunction
 ) => {
   try {
+    const customerInputs = plainToClass(UserLoginInput, req.body);
+
+    const validationError = await validate(customerInputs, {
+      validationError: { target: true },
+    });
+
+    if (validationError.length > 0) {
+      return res.status(400).json({ success: false, message: validationError });
+    }
+
+    const { email, password } = customerInputs;
+    const customer = await Customer.findOne({ email: email });
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not found" });
+    }
+
+    const validation = await ValidatePassword(
+      password,
+      customer.password,
+      customer.salt
+    );
+
+    if (!validation) {
+      return res
+        .status(400)
+        .json({ success: false, message: "error with login" });
+    }
+
+    const signature = GenerateSignature({
+      _id: customer._id,
+      email: customer.email,
+      verified: customer.verified,
+    });
+
+    return res.status(200).json({
+      token: signature,
+      data: { email: customer.email, verified: customer.verified },
+    });
   } catch (error) {
     res.status(500).json({
       sucess: false,
@@ -104,6 +153,50 @@ export const customerVerify = async (
   next: NextFunction
 ) => {
   try {
+    const { otp } = req.body;
+    const customer = req.user;
+
+    if (!otp) {
+      return res.status(400).json({ success: false, message: "otp not found" });
+    }
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not found" });
+    }
+
+    const profile = await Customer.findById(customer._id);
+
+    if (!profile) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Unable to verify Customer" });
+    }
+
+    if (profile.otp === parseInt(otp) && profile.otp_expiry >= new Date()) {
+      profile.verified = true;
+
+      const updatedCustomer = await profile.save();
+
+      const signature = GenerateSignature({
+        _id: updatedCustomer._id,
+        email: updatedCustomer.email,
+        verified: updatedCustomer.verified,
+      });
+
+      return res.status(200).json({
+        token: signature,
+        data: {
+          email: updatedCustomer.email,
+          verified: updatedCustomer.verified,
+        },
+      });
+    } else {
+      return res
+        .status(400)
+        .json({ success: false, message: "otp is not valid" });
+    }
   } catch (error) {
     res.status(500).json({
       sucess: false,
@@ -118,6 +211,38 @@ export const requestOtp = async (
   next: NextFunction
 ) => {
   try {
+    const customer = req.user;
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not found" });
+    }
+
+    const profile = await Customer.findById(customer._id);
+
+    if (!profile) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Unable to find Customer" });
+    }
+
+    const { otp, expiry } = GenerateOtp();
+    profile.otp = otp;
+    profile.otp_expiry = expiry;
+
+    await profile.save();
+    const sendCode = await onRequestOTP(otp, profile.phone);
+
+    if (!sendCode) {
+      return res
+        .status(400)
+        .json({ message: "Failed to verify your phone number" });
+    }
+
+    return res
+      .status(200)
+      .json({ message: "OTP sent to your registered Mobile Number!" });
   } catch (error) {
     res.status(500).json({
       sucess: false,
@@ -132,6 +257,23 @@ export const getCustomerProfile = async (
   next: NextFunction
 ) => {
   try {
+    const customer = req.user;
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not found" });
+    }
+
+    const profile = await Customer.findById(customer._id);
+
+    if (!profile) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Error while Fetching Profile" });
+    }
+
+    res.status(200).json({ success: true, data: profile });
   } catch (error) {
     res.status(500).json({
       sucess: false,
@@ -146,6 +288,40 @@ export const editCustomerProfile = async (
   next: NextFunction
 ) => {
   try {
+    const customer = req.user;
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not found" });
+    }
+
+    const customerInputs = plainToClass(EditCustomerProfileInput, req.body);
+
+    const validationError = await validate(customerInputs, {
+      validationError: { target: true },
+    });
+
+    if (validationError.length > 0) {
+      return res.status(400).json({ success: false, message: validationError });
+    }
+
+    const { firstName, lastName, address } = customerInputs;
+
+    const profile = await Customer.findById(customer._id);
+
+    if (!profile) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Error while Updating Profile" });
+    }
+
+    profile.firstName = firstName || profile.firstName;
+    profile.lastName = lastName || profile.lastName;
+    profile.address = address || profile.address;
+    const result = await profile.save();
+
+    res.status(200).json({ success: true, result });
   } catch (error) {
     res.status(500).json({
       sucess: false,
