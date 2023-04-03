@@ -1,26 +1,23 @@
-import express from 'express';
-import App from './services/express';
-import dbConnection from './services/Database';
-import { PORT } from './config';
-import dotenv from 'dotenv';
+import express from "express";
+import App from "./services/express";
+import { dbconnect } from "./services/database";
+import { PORT } from "./config";
+import dotenv from "dotenv";
 
-dotenv.config()
+dotenv.config();
 
 const StartServer = async () => {
+  const app = express();
 
-    const app = express();
+  await dbconnect();
 
-    await dbConnection()
-
-    await App(app);
-
-    app.listen(PORT, () => {
-        console.log(`Listening to port ${PORT}`);
-    })
-}
+  await App(app);
+  app.listen(PORT, () => {
+    console.log(`Listening to port ${PORT}`);
+  });
+};
 
 StartServer();
-
 
 // import express from "express";
 // import mongoose from "mongoose";
