@@ -1,10 +1,13 @@
 import express from "express";
 import {
+  createOrder,
   customerLogin,
   customerSignup,
   customerVerify,
   editCustomerProfile,
+  getAllOrders,
   getCustomerProfile,
+  getOrderById,
   requestOtp,
 } from "../controllers";
 import { Authenticate } from "../middlewares";
@@ -29,5 +32,10 @@ router.get("/otp", requestOtp);
 /* ------------------- Profile --------------------- */
 router.get("/profile", getCustomerProfile);
 router.patch("/profile", editCustomerProfile);
+
+// order
+router.post("/create-order", createOrder);
+router.get("/orders", getAllOrders);
+router.get("/order/:id", getOrderById);
 
 export { router as CustomerRoutes };
