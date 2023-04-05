@@ -3,6 +3,7 @@ import { plainToClass } from "class-transformer";
 import {
   CreateCustomerInput,
   EditCustomerProfileInput,
+  OrderInput,
   UserLoginInput,
 } from "../dtos/customer.dto";
 import { validate } from "class-validator";
@@ -12,8 +13,9 @@ import {
   GenerateSignature,
   ValidatePassword,
 } from "../utility";
-import { Customer } from "../models";
+import { Customer, Food } from "../models";
 import { GenerateOtp, onRequestOTP } from "../utility/notifications";
+import { Order } from "../models/order.model";
 
 export const customerSignup = async (
   req: Request,
@@ -321,7 +323,113 @@ export const editCustomerProfile = async (
     profile.address = address || profile.address;
     const result = await profile.save();
 
-    res.status(200).json({ success: true, result });
+    res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const createOrder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // current login customer
+
+    const customer = req.user;
+
+
+    // grap order from request body
+    const cart = <[OrderInput]>req.body;
+
+    let cartItems = [];
+    let netAmount = 0.0;
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not found" });
+    }
+
+    // create order id
+    const orderId = `${Math.floor(Math.random() * 89999) + 1000}`;
+
+    const profile = await Customer.findById(customer._id);
+    // calculate order amount
+    const foods = await Food.find()
+      .where("_id")
+      .in(cart.map((item) => item._id))
+      .exec();
+      
+    foods.map((food) => {
+      cart.map(({ _id, unit }) => {
+        if (food._id == _id) {
+          netAmount += food.price * unit;
+          cartItems.push({ food, unit });
+        }
+      });
+    });
+
+    // create order with item description
+    if (!cartItems) {
+      return res
+        .status(404)
+        .json({ success: false, message: "cart not found" });
+    }
+
+    const order = await Order.create({
+      orderId: orderId,
+      items: cartItems,
+      totalAmount: netAmount,
+      orderDate: new Date(),
+      paidThrough: "COD",
+      paymentResponse: "",
+      orderStatus: "Waiting",
+    });
+
+    // update order to user account
+    if (!order) {
+      return res
+        .status(400)
+        .json({ success: false, message: "error with create order" });
+    }
+
+    profile.orders.push(order);
+    await profile.save();
+
+    res.status(201).json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const getAllOrders = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const getOrderById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
   } catch (error) {
     res.status(500).json({
       sucess: false,

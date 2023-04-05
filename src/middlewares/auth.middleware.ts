@@ -19,6 +19,6 @@ export const Authenticate = async (
   if (signature) {
     return next();
   } else {
-    return res.json({ message: "User Not authorised" });
+    return res.json({ message: "User Not authorized" });
   }
 };
