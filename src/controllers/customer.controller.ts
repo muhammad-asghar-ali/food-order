@@ -370,7 +370,6 @@ export const createOrder = async (
       .where("_id")
       .in(cart.map((item) => item._id))
       .exec();
-
     foods.map((food) => {
       cart.map(({ _id, unit }) => {
         if (food._id == _id) {
