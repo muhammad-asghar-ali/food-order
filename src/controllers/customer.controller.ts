@@ -342,7 +342,6 @@ export const createOrder = async (
 
     const customer = req.user;
 
-
     // grap order from request body
     const cart = <[OrderInput]>req.body;
 
@@ -359,12 +358,18 @@ export const createOrder = async (
     const orderId = `${Math.floor(Math.random() * 89999) + 1000}`;
 
     const profile = await Customer.findById(customer._id);
+
+    if (!profile) {
+      return res
+        .status(404)
+        .json({ success: false, message: "unable to create order" });
+    }
+
     // calculate order amount
     const foods = await Food.find()
       .where("_id")
       .in(cart.map((item) => item._id))
       .exec();
-      
     foods.map((food) => {
       cart.map(({ _id, unit }) => {
         if (food._id == _id) {
@@ -416,6 +421,23 @@ export const getAllOrders = async (
   next: NextFunction
 ) => {
   try {
+    const customer = req.user;
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not found" });
+    }
+
+    const profile = await Customer.findById(customer._id).populate("orders");
+
+    if (!profile) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not found with order" });
+    }
+
+    res.status(200).json({ success: true, data: profile });
   } catch (error) {
     res.status(500).json({
       sucess: false,
@@ -425,6 +447,137 @@ export const getAllOrders = async (
 };
 
 export const getOrderById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const orderId = req.params.id;
+
+    if (!orderId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "order id is missing in the params" });
+    }
+
+    const order = await Order.findById(orderId).populate("items.food");
+
+    if (!order) {
+      return res
+        .status(404)
+        .json({ success: false, message: "order not found" });
+    }
+
+    res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const addToCart = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    // current login customer
+
+    const customer = req.user;
+
+    const { _id, unit } = <OrderInput>req.body;
+
+    console.log(_id, unit)
+
+    if (!_id || unit <= -1) {
+      return res
+        .status(400)
+        .json({ success: false, message: "cart items are required" });
+    }
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not found" });
+    }
+
+    const food = await Food.findById(_id);
+
+    if (!food) {
+      return res
+        .status(404)
+        .json({ success: false, message: "unable to cart the food" });
+    }
+
+    const profile = await Customer.findById(customer._id).populate("cart.food");
+    console.log(profile)
+    if (!profile) {
+      return res
+        .status(404)
+        .json({ success: false, message: "unable to create cart" });
+    }
+
+    let cartItems = [];
+    cartItems = profile.cart;
+
+    if (cartItems.length > 0) {
+      // check and update cart
+      const existFoodItem = cartItems.filter(
+        (ele) => ele.food._id.toString() === _id
+      );
+
+      if (existFoodItem.length > 0) {
+        // get the find food index
+        const index = cartItems.indexOf(existFoodItem[0]);
+
+        if (unit > 0) {
+          // add unit to food
+          cartItems[index] = { food, unit };
+        } else {
+          // remove food from cart
+          cartItems.splice(index, 1);
+        }
+      }
+    } else {
+      // add new items to cart
+      cartItems.push({ food, unit });
+    }
+
+    if(!cartItems) {
+      return res
+      .status(404)
+      .json({ success: false, message: "unable to create cart" });
+    } 
+
+    profile.cart = cartItems as any
+    const cartResult = await profile.save()
+    return res.status(201).json({success: true, data: cartResult.cart}) 
+
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const getCart = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const deleteCart = async (
   req: Request,
   res: Response,
   next: NextFunction

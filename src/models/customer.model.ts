@@ -16,6 +16,7 @@ interface CustomerDoc extends Document {
   lng: number;
   // order
   orders: [OrderDoc];
+  cart: [any];
 }
 
 const CustomerSchema = new Schema(
@@ -37,6 +38,12 @@ const CustomerSchema = new Schema(
       {
         type: Schema.Types.ObjectId,
         ref: "order",
+      },
+    ],
+    cart: [
+      {
+        food: { type: Schema.Types.ObjectId, ref: "food", required: true },
+        unit: { type: Number, required: true },
       },
     ],
   },
