@@ -489,8 +489,6 @@ export const addToCart = async (
 
     const { _id, unit } = <OrderInput>req.body;
 
-    console.log(_id, unit)
-
     if (!_id || unit <= -1) {
       return res
         .status(400)
@@ -512,7 +510,6 @@ export const addToCart = async (
     }
 
     const profile = await Customer.findById(customer._id).populate("cart.food");
-    console.log(profile)
     if (!profile) {
       return res
         .status(404)
@@ -545,15 +542,16 @@ export const addToCart = async (
       cartItems.push({ food, unit });
     }
 
-    if(!cartItems) {
+    if (!cartItems) {
       return res
-      .status(404)
-      .json({ success: false, message: "unable to create cart" });
-    } 
+        .status(404)
+        .json({ success: false, message: "unable to create cart" });
+    }
 
-    profile.cart = cartItems as any
-    const cartResult = await profile.save()
-    return res.status(201).json({success: true, data: cartResult.cart}) 
+    profile.cart = cartItems as any;
+    const cartResult = await profile.save();
+    
+    return res.status(201).json({ success: true, data: cartResult.cart });
 
   } catch (error) {
     res.status(500).json({
@@ -569,6 +567,21 @@ export const getCart = async (
   next: NextFunction
 ) => {
   try {
+    const customer = req.user;
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not found" });
+    }
+
+    const profile = await Customer.findById(customer._id).populate("cart.food");
+
+    if (!profile) {
+      return res.status(400).json({ success: false, message: "cart is empty" });
+    }
+
+    return res.status(200).json({ success: true, data: profile.cart });
   } catch (error) {
     res.status(500).json({
       sucess: false,
@@ -583,6 +596,24 @@ export const deleteCart = async (
   next: NextFunction
 ) => {
   try {
+    const customer = req.user;
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not found" });
+    }
+
+    const profile = await Customer.findById(customer._id).populate("cart.food");
+
+    if (!profile) {
+      return res.status(400).json({ success: false, message: "cart is empty" });
+    }
+
+    profile.cart = [] as any;
+    const cartResult = await profile.save();
+
+    return res.status(200).json({ success: true, data: cartResult });
   } catch (error) {
     res.status(500).json({
       sucess: false,
