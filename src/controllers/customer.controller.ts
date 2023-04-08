@@ -510,7 +510,6 @@ export const addToCart = async (
     }
 
     const profile = await Customer.findById(customer._id).populate("cart.food");
-
     if (!profile) {
       return res
         .status(404)
