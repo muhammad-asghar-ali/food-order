@@ -270,3 +270,48 @@ export const getFoods = async (
     });
   }
 };
+
+export const getOrders = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+   
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const processOrder = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+   
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const getOrderDetails = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+   
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};

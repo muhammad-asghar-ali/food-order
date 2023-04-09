@@ -36,6 +36,11 @@ router.patch("/service", updateVendorService);
 router.post("/food", images, addFood);
 router.get("/foods", getFoods);
 
+// order
+router.get('/orders')
+router.put('/order/:id/process')
+router.get('/order/:id')
+
 router.get("/", (req: Request, res: Response, next: NextFunction) => {
   res.json({ message: "hello from vendor" });
 });
