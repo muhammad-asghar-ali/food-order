@@ -358,7 +358,7 @@ export const createOrder = async (
     const orderId = `${Math.floor(Math.random() * 89999) + 1000}`;
 
     const profile = await Customer.findById(customer._id);
-
+    let vendorId
     if (!profile) {
       return res
         .status(404)
@@ -373,6 +373,7 @@ export const createOrder = async (
     foods.map((food) => {
       cart.map(({ _id, unit }) => {
         if (food._id == _id) {
+          vendorId = food.vendorId;
           netAmount += food.price * unit;
           cartItems.push({ food, unit });
         }
@@ -388,12 +389,17 @@ export const createOrder = async (
 
     const order = await Order.create({
       orderId: orderId,
+      vendorId: vendorId,
       items: cartItems,
       totalAmount: netAmount,
       orderDate: new Date(),
       paidThrough: "COD",
       paymentResponse: "",
       orderStatus: "Waiting",
+      remarks: '',
+      deliveryId: '',
+      readyTime: 45,
+      offerId: null,
     });
 
     // update order to user account
@@ -403,10 +409,12 @@ export const createOrder = async (
         .json({ success: false, message: "error with create order" });
     }
 
+    profile.cart = [] as any;  
+    
     profile.orders.push(order);
     await profile.save();
 
-    res.status(201).json({ success: true, data: order });
+    res.status(201).json({ success: true, data: profile });
   } catch (error) {
     res.status(500).json({
       sucess: false,
@@ -502,14 +510,13 @@ export const addToCart = async (
     }
 
     const food = await Food.findById(_id);
-
     if (!food) {
       return res
         .status(404)
         .json({ success: false, message: "unable to cart the food" });
     }
 
-    const profile = await Customer.findById(customer._id).populate("cart.food");
+    const profile = await Customer.findById(customer._id).populate('cart.food');
     if (!profile) {
       return res
         .status(404)
@@ -536,7 +543,10 @@ export const addToCart = async (
           // remove food from cart
           cartItems.splice(index, 1);
         }
-      }
+      } else {
+        // add new items to cart
+        cartItems.push({ food, unit });
+      }  
     } else {
       // add new items to cart
       cartItems.push({ food, unit });
