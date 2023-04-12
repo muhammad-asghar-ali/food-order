@@ -324,13 +324,17 @@ export const processOrder = async (
       });
     }
 
-    const order = await Order.findByIdAndUpdate(orderId, {
-      orderStatus: status,
-      remarks: remarks,
-      readyTime: time
-    }, {new: true}).populate('items.food')
+    const order = await Order.findByIdAndUpdate(
+      orderId,
+      {
+        orderStatus: status,
+        remarks: remarks,
+        readyTime: time,
+      },
+      { new: true }
+    ).populate("items.food");
 
-    if(!order) {
+    if (!order) {
       return res.status(404).json({
         sucess: false,
         message: "unable to process order",
@@ -371,6 +375,48 @@ export const getOrderDetails = async (
     }
 
     res.status(200).json({ success: true, data: order });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const getOffers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const addOffer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const editOffer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
   } catch (error) {
     res.status(500).json({
       sucess: false,
