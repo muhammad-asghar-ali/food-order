@@ -12,8 +12,8 @@ export interface OfferDoc extends Document {
   promocode: string;
   promoType: string;
   bank: [any];
-  bsina: [any];
-  pincode: number;
+  bins: [any];
+  pincode: string;
   isActive: boolean;
 }
 
@@ -35,8 +35,8 @@ const OfferSchema = new Schema(
     promocode: { type: String },
     promoType: { type: String },
     bank: [{ type: String }],
-    bsins: [{ type: Number }],
-    pincode: { type: Number },
+    bins: [{ type: Number }],
+    pincode: { type: String },
     isActive: { type: Boolean },
   },
   {
