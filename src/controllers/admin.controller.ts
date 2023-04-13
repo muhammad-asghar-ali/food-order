@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { CreateVendorInput } from "../dtos";
 import { Vendor } from "../models";
+import { Transaction } from "../models/transection.model";
 import { GeneratePassword, GenerateSalt } from "../utility";
 
 // refactor code
@@ -114,13 +115,63 @@ export const getVendorById = async (
 
     const vendor = await FindVendor(id);
 
-  if (!vendor) {
-    return res
-      .status(400)
-      .json({ success: false, message: "no vendor found" });
+    if (!vendor) {
+      return res
+        .status(400)
+        .json({ success: false, message: "no vendor found" });
+    }
+    // send a response in json format
+    res.status(200).json({ success: true, data: vendor });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
   }
-  // send a response in json format
-  res.status(200).json({ success: true, data: vendor });
+};
+
+export const getTransections = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const transactions = await Transaction.find();
+    if (!transactions.length) {
+      return res
+        .status(404)
+        .json({ success: false, message: "no transections found" });
+    }
+    res.status(200).json({ success: true, data: transactions });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const getTransectionById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const txnId = req.params.id
+
+    if(!txnId) {
+      return res
+      .status(400)
+      .json({ success: false, message: "transection id is missing" });
+    }
+
+    const transaction = await Transaction.findById(txnId);
+    if (!transaction) {
+      return res
+        .status(404)
+        .json({ success: false, message: "no transections found" });
+    }
+    res.status(200).json({ success: true, data: transaction });
   } catch (error) {
     res.status(500).json({
       sucess: false,

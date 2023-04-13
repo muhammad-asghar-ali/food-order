@@ -2,6 +2,7 @@ import express from "express";
 import {
   addToCart,
   createOrder,
+  createPayment,
   customerLogin,
   customerSignup,
   customerVerify,
@@ -49,5 +50,8 @@ router.delete('/cart', deleteCart)
 
 /* ------------------- Apply Offer --------------------- */
 router.get("/offer/verify/:id", verifyOffer)
+
+/* ------------------- Payment --------------------- */
+router.post("/create-payment", createPayment)
 
 export { router as CustomerRoutes };

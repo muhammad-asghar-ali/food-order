@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { plainToClass } from "class-transformer";
 import {
+  CartItem,
   CreateCustomerInput,
   EditCustomerProfileInput,
   OrderInput,
@@ -16,6 +17,7 @@ import {
 import { Customer, Food, Offer } from "../models";
 import { GenerateOtp, onRequestOTP } from "../utility/notifications";
 import { Order } from "../models/order.model";
+import { Transaction } from "../models/transection.model";
 
 export const customerSignup = async (
   req: Request,
@@ -343,7 +345,7 @@ export const createOrder = async (
     const customer = req.user;
 
     // grap order from request body
-    const cart = <[OrderInput]>req.body;
+    const { txnId, amount, items } = <OrderInput>req.body;
 
     let cartItems = [];
     let netAmount = 0.0;
@@ -357,6 +359,12 @@ export const createOrder = async (
     // create order id
     const orderId = `${Math.floor(Math.random() * 89999) + 1000}`;
 
+    const { status, currentTransaction } = await validateTransaction(txnId);
+
+    if (!status) {
+      return res.status(404).json({ message: "Error while Creating Order!" });
+    }
+
     const profile = await Customer.findById(customer._id);
     let vendorId;
     if (!profile) {
@@ -368,10 +376,10 @@ export const createOrder = async (
     // calculate order amount
     const foods = await Food.find()
       .where("_id")
-      .in(cart.map((item) => item._id))
+      .in(items.map((item) => item._id))
       .exec();
     foods.map((food) => {
-      cart.map(({ _id, unit }) => {
+      items.map(({ _id, unit }) => {
         if (food._id == _id) {
           vendorId = food.vendorId;
           netAmount += food.price * unit;
@@ -392,14 +400,12 @@ export const createOrder = async (
       vendorId: vendorId,
       items: cartItems,
       totalAmount: netAmount,
+      paidAmount: amount,
       orderDate: new Date(),
-      paidThrough: "COD",
-      paymentResponse: "",
       orderStatus: "Waiting",
       remarks: "",
       deliveryId: "",
       readyTime: 45,
-      offerId: null,
     });
 
     // update order to user account
@@ -410,6 +416,13 @@ export const createOrder = async (
     }
 
     profile.cart = [] as any;
+
+    // update transection
+    currentTransaction.vendorId = vendorId;
+    currentTransaction.orderId = orderId;
+    currentTransaction.status = "CONFIRMED";
+
+    await currentTransaction.save();
 
     profile.orders.push(order);
     await profile.save();
@@ -495,7 +508,7 @@ export const addToCart = async (
 
     const customer = req.user;
 
-    const { _id, unit } = <OrderInput>req.body;
+    const { _id, unit } = <CartItem>req.body;
 
     if (!_id || unit <= -1) {
       return res
@@ -676,4 +689,73 @@ export const verifyOffer = async (
       message: error.message ? error.message : "Internal server error",
     });
   }
+};
+
+export const createPayment = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const customer = req.user;
+
+    const { amount, paymentMode, offerId } = req.body;
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not valid" });
+    }
+
+    let payableAmount = Number(amount);
+
+    if (!offerId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "offer id is missing" });
+    }
+
+    const offer = await Offer.findById(offerId);
+
+    if (!offer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "no offer valid" });
+    }
+
+    if (offer.isActive) {
+      payableAmount = payableAmount - offer.offerAmount;
+    }
+
+    // create record on transaction
+    const transaction = await Transaction.create({
+      customer: customer._id,
+      vendorId: "",
+      orderId: "",
+      orderValue: payableAmount,
+      offerUsed: offerId || "NA",
+      status: "OPEN",
+      paymentMode: paymentMode,
+      paymentResponse: "Payment is cash on Delivery",
+    });
+
+    //return transaction
+    return res.status(201).json({ success: true, data: transaction });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+const validateTransaction = async (txnId: string) => {
+  const currentTransaction = await Transaction.findById(txnId);
+
+  if (currentTransaction) {
+    if (currentTransaction.status.toLowerCase() !== "failed") {
+      return { status: true, currentTransaction };
+    }
+  }
+  return { status: false, currentTransaction };
 };
