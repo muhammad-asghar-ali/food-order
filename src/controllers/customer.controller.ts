@@ -13,7 +13,7 @@ import {
   GenerateSignature,
   ValidatePassword,
 } from "../utility";
-import { Customer, Food } from "../models";
+import { Customer, Food, Offer } from "../models";
 import { GenerateOtp, onRequestOTP } from "../utility/notifications";
 import { Order } from "../models/order.model";
 
@@ -358,7 +358,7 @@ export const createOrder = async (
     const orderId = `${Math.floor(Math.random() * 89999) + 1000}`;
 
     const profile = await Customer.findById(customer._id);
-    let vendorId
+    let vendorId;
     if (!profile) {
       return res
         .status(404)
@@ -396,8 +396,8 @@ export const createOrder = async (
       paidThrough: "COD",
       paymentResponse: "",
       orderStatus: "Waiting",
-      remarks: '',
-      deliveryId: '',
+      remarks: "",
+      deliveryId: "",
       readyTime: 45,
       offerId: null,
     });
@@ -409,8 +409,8 @@ export const createOrder = async (
         .json({ success: false, message: "error with create order" });
     }
 
-    profile.cart = [] as any;  
-    
+    profile.cart = [] as any;
+
     profile.orders.push(order);
     await profile.save();
 
@@ -516,7 +516,7 @@ export const addToCart = async (
         .json({ success: false, message: "unable to cart the food" });
     }
 
-    const profile = await Customer.findById(customer._id).populate('cart.food');
+    const profile = await Customer.findById(customer._id).populate("cart.food");
     if (!profile) {
       return res
         .status(404)
@@ -546,7 +546,7 @@ export const addToCart = async (
       } else {
         // add new items to cart
         cartItems.push({ food, unit });
-      }  
+      }
     } else {
       // add new items to cart
       cartItems.push({ food, unit });
@@ -560,9 +560,8 @@ export const addToCart = async (
 
     profile.cart = cartItems as any;
     const cartResult = await profile.save();
-    
-    return res.status(201).json({ success: true, data: cartResult.cart });
 
+    return res.status(201).json({ success: true, data: cartResult.cart });
   } catch (error) {
     res.status(500).json({
       sucess: false,
@@ -624,6 +623,53 @@ export const deleteCart = async (
     const cartResult = await profile.save();
 
     return res.status(200).json({ success: true, data: cartResult });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const verifyOffer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const offerId = req.params.id;
+
+    const customer = req.user;
+
+    if (!offerId) {
+      return res
+        .status(400)
+        .json({ success: false, message: "offer id is missing" });
+    }
+
+    if (!customer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "customer not valid" });
+    }
+
+    const offer = await Offer.findById(offerId);
+
+    if (!offer) {
+      return res
+        .status(404)
+        .json({ success: false, message: "no offer valid" });
+    }
+
+    if (offer.promoType === "USER") {
+      // only apply once
+    } else if (offer.isActive) {
+      return res.status(200).json({ success: true, data: offer });
+    } else {
+      return res
+        .status(404)
+        .json({ success: false, message: "no offer valid" });
+    }
   } catch (error) {
     res.status(500).json({
       sucess: false,

@@ -12,6 +12,7 @@ import {
   getCustomerProfile,
   getOrderById,
   requestOtp,
+  verifyOffer,
 } from "../controllers";
 import { Authenticate } from "../middlewares";
 
@@ -36,14 +37,17 @@ router.get("/otp", requestOtp);
 router.get("/profile", getCustomerProfile);
 router.patch("/profile", editCustomerProfile);
 
-// order
+/* ------------------- Order --------------------- */
 router.post("/create-order", createOrder);
 router.get("/orders", getAllOrders);
 router.get("/order/:id", getOrderById);
 
-// cart
+/* ------------------- Cart --------------------- */
 router.post('/cart', addToCart)
 router.get('/cart', getCart)
 router.delete('/cart', deleteCart)
+
+/* ------------------- Apply Offer --------------------- */
+router.get("/offer/verify/:id", verifyOffer)
 
 export { router as CustomerRoutes };

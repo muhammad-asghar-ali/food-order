@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
-import { EditVendorInput, VendorLoginInput } from "../dtos";
+import { CreateOfferInputs, EditVendorInput, VendorLoginInput } from "../dtos";
 import { CreateFoodInput } from "../dtos/food.dto";
-import { Food } from "../models";
+import { Food, Offer } from "../models";
 import { Order } from "../models/order.model";
 import { GenerateSignature, ValidatePassword } from "../utility";
 import { FindVendor } from "./admin.controller";
@@ -383,12 +383,51 @@ export const getOrderDetails = async (
   }
 };
 
-export const getOffers = async (
+export const addOffer = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
+    const user = req.user;
+
+    // const {
+    //   offerType,
+    //   description,
+    //   title,
+    //   minValue,
+    //   offerAmount,
+    //   startValidity,
+    //   endValidity,
+    //   promoType,
+    //   promocode,
+    //   bank,
+    //   bins,
+    //   pincode,
+    //   isActive,
+    // } = <CreateOfferInputs>req.body;
+
+    const offerBody = <CreateOfferInputs>req.body;
+
+    if (!user) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to create offer",
+      });
+    }
+
+    const vendor = await FindVendor(user._id);
+
+    if (!vendor) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to create offer",
+      });
+    }
+    offerBody.vendors = [vendor];
+    const offer = await Offer.create(offerBody);
+
+    res.status(201).json({ success: true, data: offer });
   } catch (error) {
     res.status(500).json({
       sucess: false,
@@ -397,12 +436,45 @@ export const getOffers = async (
   }
 };
 
-export const addOffer = async (
+export const getOffers = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
   try {
+    const user = req.user;
+
+    if (!user) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Offers are not available",
+      });
+    }
+
+    const offers = await Offer.find().populate("vendors");
+    if (!offers.length) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Offers are not available",
+      });
+    }
+
+    let currentOffers = [];
+    offers.map((ele) => {
+      if (ele.vendors) {
+        ele.vendors.map((v) => {
+          if (v._id.toString() === user._id) {
+            currentOffers.push(ele);
+          }
+        });
+      }
+
+      if (ele.offerType === "GENERIC") {
+        currentOffers.push(ele);
+      }
+    });
+
+    res.status(200).json({ success: true, data: currentOffers });
   } catch (error) {
     res.status(500).json({
       sucess: false,
@@ -417,6 +489,46 @@ export const editOffer = async (
   next: NextFunction
 ) => {
   try {
+    const user = req.user;
+
+    const offerId = req.params.id;
+
+    if (!offerId) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+
+    const offerBody = <CreateOfferInputs>req.body;
+
+    if (!user) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+
+    const vendor = await FindVendor(user._id);
+
+    if (!vendor) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+
+    const updatedOffer = await Offer.findByIdAndUpdate(offerId, offerBody, {
+      new: true,
+    });
+
+    if (!updatedOffer) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+    res.status(200).json({ success: true, data: updatedOffer });
   } catch (error) {
     res.status(500).json({
       sucess: false,

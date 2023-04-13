@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from "express";
-import { FoodDoc, Vendor } from "../models";
+import { FoodDoc, Offer, Vendor } from "../models";
 
 export const getFoodAvailability = async (
   req: Request,
@@ -200,6 +200,25 @@ export const getAvailableOffers = async (
   next: NextFunction
 ) => {
   try {
+    const pincode = req.params.pincode;
+
+    if (!pincode) {
+      return res.status(400).json({
+        success: false,
+        message: "Can not get the offers",
+      });
+    }
+
+    const offers = await Offer.find({ pincode: pincode, isActive: true });
+
+    if (!offers) {
+      return res.status(404).json({
+        success: false,
+        message: "No offer avaialable",
+      });
+    }
+
+    res.status(200).json({ success: true, data: offers });
   } catch (error) {
     res.status(500).json({
       sucess: false,
