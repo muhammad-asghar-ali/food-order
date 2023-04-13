@@ -40,8 +40,14 @@ export class EditCustomerProfileInput {
     address: string;
 }
 
-export class OrderInput {
+export class CartItem {
     _id: string;
 
     unit: number;
+}
+
+export class OrderInput {
+    txnId: string;
+    amount: string;
+    items: [CartItem]
 }
