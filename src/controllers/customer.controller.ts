@@ -690,6 +690,7 @@ export const verifyOffer = async (
     });
   }
 };
+<<<<<<< HEAD
 
 export const createPayment = async (
   req: Request,
@@ -759,3 +760,5 @@ const validateTransaction = async (txnId: string) => {
   }
   return { status: false, currentTransaction };
 };
+=======
+>>>>>>> 2f95c89d099e07fcd417db1c6c47dd6aca88d998
