@@ -13,11 +13,18 @@ import {
   GenerateSalt,
   GenerateSignature,
   ValidatePassword,
+  GenerateOtp,
+  onRequestOTP,
 } from "../utility";
-import { Customer, Food, Offer } from "../models";
-import { GenerateOtp, onRequestOTP } from "../utility/notifications";
-import { Order } from "../models/order.model";
-import { Transaction } from "../models/transection.model";
+import {
+  Customer,
+  DeliveryUser,
+  Food,
+  Offer,
+  Order,
+  Transaction,
+  Vendor,
+} from "../models";
 
 export const customerSignup = async (
   req: Request,
@@ -425,6 +432,8 @@ export const createOrder = async (
     await currentTransaction.save();
 
     profile.orders.push(order);
+
+    await assignOrderForDelivery(order._id, vendorId);
     await profile.save();
 
     res.status(201).json({ success: true, data: profile });
@@ -758,4 +767,36 @@ const validateTransaction = async (txnId: string) => {
     }
   }
   return { status: false, currentTransaction };
+};
+
+/* ------------------- Delivery Notification --------------------- */
+
+const assignOrderForDelivery = async (orderId: string, vendorId: string) => {
+  // find the vendor
+  const vendor = await Vendor.findById(vendorId);
+  if (vendor) {
+    const areaCode = vendor.pincode;
+    const vendorLat = vendor.lat;
+    const vendorLng = vendor.lng;
+
+    //find the available Delivery person
+    const deliveryPerson = await DeliveryUser.find({
+      pincode: areaCode,
+      verified: true,
+      isAvailable: true,
+    });
+    if (deliveryPerson) {
+      // Check the nearest delivery person and assign the order
+
+      const currentOrder = await Order.findById(orderId);
+      if (currentOrder) {
+        //update Delivery ID
+        currentOrder.deliveryId = deliveryPerson[0]._id;
+        await currentOrder.save();
+
+        //Notify to vendor for received new order firebase push notification
+      }
+    }
+  }
+  // Update Delivery ID
 };

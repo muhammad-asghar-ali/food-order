@@ -14,6 +14,8 @@ interface VendorDoc extends Document {
   coverImages: [string];
   rating: string;
   foods: any;
+  lat: number;
+  lng: number;
 }
 
 const VendorSchema = new Schema(
@@ -36,19 +38,21 @@ const VendorSchema = new Schema(
         ref: "food",
       },
     ],
+    lat: { type: Number },
+    lng: { type: Number },
   },
-  { 
+  {
     // set the json response here
     toJSON: {
       transform(doc, ret) {
         delete ret.password,
-        delete ret.salt,
-        delete ret.__v,
-        delete ret.createdAt,
-        delete ret.updatedAt
-      }
+          delete ret.salt,
+          delete ret.__v,
+          delete ret.createdAt,
+          delete ret.updatedAt;
+      },
     },
-    timestamps: true 
+    timestamps: true,
   }
 );
 
