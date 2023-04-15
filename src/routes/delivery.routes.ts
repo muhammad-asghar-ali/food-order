@@ -1,25 +1,28 @@
-import express  from 'express';
-import { deliveryLogin, deliverySignUp } from '../controllers';
-import { Authenticate } from '../middlewares';
-
+import express from "express";
+import {
+  deliveryLogin,
+  deliverySignUp,
+  editDeliveryProfile,
+  getDeliveryProfile,
+} from "../controllers";
+import { Authenticate } from "../middlewares";
 
 const router = express.Router();
 
 /* ------------------- Signup / Create Customer --------------------- */
-router.post('/signup', deliverySignUp)
+router.post("/signup", deliverySignUp);
 
 /* ------------------- Login --------------------- */
-router.post('/login', deliveryLogin)
+router.post("/login", deliveryLogin);
 
 /* ------------------- Authentication --------------------- */
 router.use(Authenticate);
 
 /* ------------------- Change Service Status --------------------- */
-router.put('/change-status');
+router.put("/change-status");
 
 /* ------------------- Profile --------------------- */
-router.get('/profile')
-router.patch('/profile')
+router.get("/profile", getDeliveryProfile);
+router.patch("/profile", editDeliveryProfile);
 
-
-export { router as DeliveryRoute}
+export { router as DeliveryRoute };
