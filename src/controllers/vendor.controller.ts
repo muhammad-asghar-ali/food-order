@@ -1,8 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { CreateOfferInputs, EditVendorInput, VendorLoginInput } from "../dtos";
-import { CreateFoodInput } from "../dtos/food.dto";
-import { Food, Offer } from "../models";
-import { Order } from "../models/order.model";
+import { CreateOfferInputs, EditVendorInput, VendorLoginInput, CreateFoodInput } from "../dtos";
+import { Food, Offer, Order } from "../models";
 import { GenerateSignature, ValidatePassword } from "../utility";
 import { FindVendor } from "./admin.controller";
 
@@ -159,6 +157,8 @@ export const updateVendorService = async (
   try {
     const user = req.user;
 
+    const { lat, lng } = req.body;
+
     if (!user) {
       return res.status(400).json({
         sucess: false,
@@ -170,7 +170,10 @@ export const updateVendorService = async (
 
     if (existingVendor) {
       existingVendor.serviceAvailabilty = !existingVendor.serviceAvailabilty;
-
+      if(lat && lng){
+          existingVendor.lat = lat;
+          existingVendor.lng = lng;
+      }
       const saveResult = await existingVendor.save();
 
       res.status(200).json({
@@ -178,6 +181,8 @@ export const updateVendorService = async (
         data: saveResult,
       });
     }
+
+    return res.json({success: false, message: 'Unable to Update vendor profile '})
   } catch (error) {
     res.status(500).json({
       sucess: false,

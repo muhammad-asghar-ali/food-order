@@ -1,7 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { CreateVendorInput } from "../dtos";
-import { Vendor } from "../models";
-import { Transaction } from "../models/transection.model";
+import { Transaction, Vendor } from "../models";
 import { GeneratePassword, GenerateSalt } from "../utility";
 
 // refactor code
