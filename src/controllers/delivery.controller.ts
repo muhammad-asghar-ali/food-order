@@ -214,3 +214,48 @@ export const editDeliveryProfile = async (
     });
   }
 };
+
+export const updateDeliveryUserStatus = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const deliveryUser = req.user;
+    const { lat, lng } = req.body;
+
+    if (!lat && !lng) {
+      return res
+        .status(400)
+        .json({ success: false, message: "body is missing" });
+    }
+
+    if (!deliveryUser) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Error while Updating Profile" });
+    }
+
+    const profile = await DeliveryUser.findById(deliveryUser._id);
+
+    if (!profile) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Error while Updating Profile" });
+    }
+
+    profile.lat = lat;
+    profile.lng = lng;
+
+    profile.isAvailable = !profile.isAvailable;
+
+    const result = await profile.save();
+
+    return res.status(201).json(result);
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};

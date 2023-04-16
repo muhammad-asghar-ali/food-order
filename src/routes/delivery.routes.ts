@@ -4,6 +4,7 @@ import {
   deliverySignUp,
   editDeliveryProfile,
   getDeliveryProfile,
+  updateDeliveryUserStatus,
 } from "../controllers";
 import { Authenticate } from "../middlewares";
 
@@ -19,7 +20,7 @@ router.post("/login", deliveryLogin);
 router.use(Authenticate);
 
 /* ------------------- Change Service Status --------------------- */
-router.put("/change-status");
+router.put("/change-status", updateDeliveryUserStatus);
 
 /* ------------------- Profile --------------------- */
 router.get("/profile", getDeliveryProfile);
