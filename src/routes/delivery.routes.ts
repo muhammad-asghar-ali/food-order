@@ -4,7 +4,10 @@ import {
   deliverySignUp,
   editDeliveryProfile,
   getDeliveryProfile,
+<<<<<<< HEAD
   updateDeliveryUserStatus,
+=======
+>>>>>>> 9ccf2fe5fec97fd8dc47f08f49155993296a87f2
 } from "../controllers";
 import { Authenticate } from "../middlewares";
 
