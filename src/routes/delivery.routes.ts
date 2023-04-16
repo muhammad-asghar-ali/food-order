@@ -4,7 +4,7 @@ import {
   deliverySignUp,
   editDeliveryProfile,
   getDeliveryProfile,
-  updateDeliveryUserStatus,
+  updateDeliveryUserStatus
 } from "../controllers";
 import { Authenticate } from "../middlewares";
 
