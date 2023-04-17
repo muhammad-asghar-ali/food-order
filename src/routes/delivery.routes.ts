@@ -20,7 +20,7 @@ router.post("/login", deliveryLogin);
 router.use(Authenticate);
 
 /* ------------------- Change Service Status --------------------- */
-router.put("/change-status", updateDeliveryUserStatus);
+router.put("/changestatus", updateDeliveryUserStatus);
 
 /* ------------------- Profile --------------------- */
 router.get("/profile", getDeliveryProfile);

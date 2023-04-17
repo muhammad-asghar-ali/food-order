@@ -40,8 +40,7 @@ export const deliverySignUp = async (
     const userPassword = await GeneratePassword(password, salt);
 
     const existingDeliveryUser = await DeliveryUser.findOne({ email: email });
-
-    if (!existingDeliveryUser) {
+    if (existingDeliveryUser) {
       return res
         .status(400)
         .json({ message: "A Delivery User exist with the provided email ID!" });
@@ -106,7 +105,7 @@ export const deliveryLogin = async (
 
     const deliveryUser = await DeliveryUser.findOne({ email: email });
 
-    if (deliveryUser) {
+    if (!deliveryUser) {
       return res.json({ success: false, message: "Error Login" });
     }
 
@@ -150,7 +149,7 @@ export const getDeliveryProfile = async (
   try {
     const deliveryUser = req.user;
 
-    if (deliveryUser) {
+    if (!deliveryUser) {
       return res
         .status(400)
         .json({ success: false, message: "Error while Fetching Profile" });
@@ -190,18 +189,13 @@ export const editDeliveryProfile = async (
       return res.status(400).json(validationError);
     }
 
-    const { firstName, lastName, address } = customerInputs;
+    const data = customerInputs;
 
     if (deliveryUser) {
-      const profile = await DeliveryUser.findById(deliveryUser._id);
+      const profile = await DeliveryUser.findByIdAndUpdate(deliveryUser._id, data, {new: true});
 
       if (profile) {
-        profile.firstName = firstName;
-        profile.lastName = lastName;
-        profile.address = address;
-        const result = await profile.save();
-
-        return res.status(201).json({ success: true, data: result });
+        return res.status(200).json({ success: true, data: profile });
       }
     }
     return res
@@ -251,7 +245,7 @@ export const updateDeliveryUserStatus = async (
 
     const result = await profile.save();
 
-    return res.status(201).json(result);
+    return res.status(201).json({success: true, data: result});
   } catch (error) {
     res.status(500).json({
       sucess: false,
