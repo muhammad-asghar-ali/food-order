@@ -385,6 +385,7 @@ export const createOrder = async (
       .where("_id")
       .in(items.map((item) => item._id))
       .exec();
+
     foods.map((food) => {
       items.map(({ _id, unit }) => {
         if (food._id == _id) {
@@ -433,7 +434,14 @@ export const createOrder = async (
 
     profile.orders.push(order);
 
-    await assignOrderForDelivery(order._id, vendorId);
+    const result = await assignOrderForDelivery(order._id, vendorId);
+    console.log(result);
+    if (result === false) {
+      return res
+        .status(400)
+        .json({ success: false, message: "error with delivery the order" });
+    }
+
     await profile.save();
 
     res.status(201).json({ success: true, data: profile });
@@ -774,6 +782,7 @@ const validateTransaction = async (txnId: string) => {
 const assignOrderForDelivery = async (orderId: string, vendorId: string) => {
   // find the vendor
   const vendor = await Vendor.findById(vendorId);
+
   if (vendor) {
     const areaCode = vendor.pincode;
     const vendorLat = vendor.lat;
@@ -785,18 +794,20 @@ const assignOrderForDelivery = async (orderId: string, vendorId: string) => {
       verified: true,
       isAvailable: true,
     });
-    if (deliveryPerson) {
-      // Check the nearest delivery person and assign the order
+    if (!deliveryPerson.length) {
+      return false;
+    }
 
-      const currentOrder = await Order.findById(orderId);
-      if (currentOrder) {
-        //update Delivery ID
-        currentOrder.deliveryId = deliveryPerson[0]._id;
-        await currentOrder.save();
+    // Check the nearest delivery person and assign the order
 
-        //Notify to vendor for received new order firebase push notification
-      }
+    const currentOrder = await Order.findById(orderId);
+    if (currentOrder) {
+      //update Delivery ID
+      currentOrder.deliveryId = deliveryPerson[0]._id;
+      await currentOrder.save();
+      return true;
+
+      //Notify to vendor for received new order firebase push notification
     }
   }
-  // Update Delivery ID
 };

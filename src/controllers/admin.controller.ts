@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { CreateVendorInput } from "../dtos";
-import { Transaction, Vendor } from "../models";
+import { DeliveryUser, Transaction, Vendor } from "../models";
 import { GeneratePassword, GenerateSalt } from "../utility";
 
 // refactor code
@@ -156,12 +156,12 @@ export const getTransectionById = async (
   next: NextFunction
 ) => {
   try {
-    const txnId = req.params.id
+    const txnId = req.params.id;
 
-    if(!txnId) {
+    if (!txnId) {
       return res
-      .status(400)
-      .json({ success: false, message: "transection id is missing" });
+        .status(400)
+        .json({ success: false, message: "transection id is missing" });
     }
 
     const transaction = await Transaction.findById(txnId);
@@ -171,6 +171,66 @@ export const getTransectionById = async (
         .json({ success: false, message: "no transections found" });
     }
     res.status(200).json({ success: true, data: transaction });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const verifyDeliveryUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const { _id, status } = req.body;
+
+    if (!_id) {
+      return res
+        .status(400)
+        .json({ success: false, message: "delivery id is missing" });
+    }
+
+    const deliveryProfile = await DeliveryUser.findByIdAndUpdate(
+      _id,
+      { verified: status },
+      { new: true }
+    );
+
+    if (!deliveryProfile) {
+      return res.status(400).json({
+        success: false,
+        message: "unable to verify the delivery user",
+      });
+    }
+
+    res.status(200).json({ success: true, data: deliveryProfile });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const getDeliveryUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const deliveryUsers = await DeliveryUser.find().select({email: 1, }).lean();
+
+    if (!deliveryUsers.length) {
+      return res.status(400).json({
+        success: false,
+        message: "unable to verify the delivery user",
+      });
+    }
+
+    res.status(200).json({ success: true, data: deliveryUsers });
   } catch (error) {
     res.status(500).json({
       sucess: false,
