@@ -541,3 +541,107 @@ export const editOffer = async (
     });
   }
 };
+
+export const getOffer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user;
+
+    const offerId = req.params.id;
+
+    if (!offerId) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+
+    const offerBody = <CreateOfferInputs>req.body;
+
+    if (!user) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+
+    const vendor = await FindVendor(user._id);
+
+    if (!vendor) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+
+    const offer = await Offer.findById(offerId);
+
+    if (!offer) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+    res.status(200).json({ success: true, data: offer });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
+
+export const deleteOffer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  try {
+    const user = req.user;
+
+    const offerId = req.params.id;
+
+    if (!offerId) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+
+    const offerBody = <CreateOfferInputs>req.body;
+
+    if (!user) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+
+    const vendor = await FindVendor(user._id);
+
+    if (!vendor) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+
+    const offer = await Offer.findByIdAndDelete(offerId);
+
+    if (!offer) {
+      return res.status(400).json({
+        sucess: false,
+        message: "Unable to edit offer",
+      });
+    }
+    res.status(200).json({ success: true, data: null });
+  } catch (error) {
+    res.status(500).json({
+      sucess: false,
+      message: error.message ? error.message : "Internal server error",
+    });
+  }
+};
