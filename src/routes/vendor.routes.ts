@@ -3,9 +3,11 @@ import path from "path";
 import {
   addFood,
   addOffer,
+  deleteOffer,
   editOffer,
   getCurrentOrders,
   getFoods,
+  getOffer,
   getOffers,
   getOrderDetails,
   getVendorProfile,
@@ -51,6 +53,8 @@ router.get("/order/:id", getOrderDetails);
 router.post("/offer", addOffer);
 router.get("/offers", getOffers);
 router.put("/offer/:id", editOffer);
+router.get("/offer/:id", getOffer);
+router.delete("/offer/:id", deleteOffer);
 
 router.get("/", (req: Request, res: Response, next: NextFunction) => {
   res.json({ message: "hello from vendor" });
